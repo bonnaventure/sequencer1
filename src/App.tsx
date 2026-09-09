@@ -4,6 +4,7 @@ import { parseProgram } from "./lib/dsl";
 import { DEFAULT_PRESET } from "./data/presets";
 import Editor from "./components/Editor";
 import StepGrid from "./components/StepGrid";
+import TB303Panel from "./components/TB303Panel";
 
 const LS_KEY = "pulsekit:code";
 
@@ -17,6 +18,7 @@ export default function App() {
   const [step, setStep] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [bpm, setBpm] = useState(program.bpm);
+  const [showPanel, setShowPanel] = useState(true);
 
   useEffect(() => {
     engine.onStep = (s) => setStep(s);
@@ -55,24 +57,50 @@ export default function App() {
   }, [togglePlay, run]);
 
   return (
-    <div className="flex h-screen flex-col bg-gray-900 text-white">
-      <header className="flex h-14 items-center gap-4 border-b border-gray-700 px-4">
-        <h1 className="text-lg font-bold">PULSEKIT</h1>
+    <div className="flex h-screen flex-col bg-gray-900 text-white overflow-auto">
+      <header className="flex h-14 items-center gap-4 border-b border-gray-700 px-4 shrink-0">
+        <h1 className="text-lg font-bold">PULSEKIT · TB-303</h1>
         <button onClick={() => void togglePlay()} className={`rounded px-3 py-1 font-bold ${isPlaying ? "bg-red-500" : "bg-green-500"}`}>
           {isPlaying ? "STOP" : "PLAY"}
         </button>
         <label className="flex items-center gap-2">
           <span>BPM</span>
-          <input type="number" value={bpm} min={40} max={260} onChange={(e) => { const v = +e.target.value; setBpm(v); engine.setBpm(v); }} className="w-16 rounded bg-gray-800 px-2 py-1" />
+          <input 
+            type="number" 
+            value={bpm} 
+            min={40} 
+            max={260} 
+            onChange={(e) => { const v = +e.target.value; setBpm(v); engine.setBpm(v); }} 
+            className="w-16 rounded bg-gray-800 px-2 py-1" 
+          />
         </label>
         <label className="flex items-center gap-2">
           <span>VOL</span>
-          <input type="range" min={0} max={1} step={0.01} defaultValue={0.8} onChange={(e) => engine.setVolume(+e.target.value)} />
+          <input 
+            type="range" 
+            min={0} 
+            max={1} 
+            step={0.01} 
+            defaultValue={0.8} 
+            onChange={(e) => engine.setVolume(+e.target.value)} 
+          />
         </label>
-        <span className="ml-auto font-mono text-sm">{step >= 0 ? `Step ${step}` : "Ready"}</span>
+        <button 
+          onClick={() => setShowPanel(!showPanel)}
+          className="ml-auto rounded px-3 py-1 bg-blue-600 hover:bg-blue-700 font-bold text-sm"
+        >
+          {showPanel ? "Hide Panel" : "Show Panel"}
+        </button>
+        <span className="font-mono text-sm">{step >= 0 ? `Step ${step}` : "Ready"}</span>
       </header>
 
-      <main className="grid flex-1 grid-cols-2 gap-4 p-4">
+      {showPanel && (
+        <div className="p-4 shrink-0">
+          <TB303Panel engine={engine} />
+        </div>
+      )}
+
+      <main className="grid flex-1 grid-cols-2 gap-4 p-4 min-h-[400px]">
         <Editor value={code} onChange={setCode} onRun={run} errorLines={new Set(program.errors.map(e => e.line))} />
         <StepGrid tracks={program.tracks} step={step} isPlaying={isPlaying} />
       </main>
